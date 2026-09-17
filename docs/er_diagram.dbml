@@ -1,0 +1,70 @@
+Project carsharing {
+  database_type: 'PostgreSQL'
+  Note: 'Каршеринг, команда 16'
+}
+
+Table users {
+  id integer [pk, increment]
+  first_name varchar(50) [not null]
+  last_name varchar(50) [not null]
+  email varchar(100) [not null, unique]
+  phone_number varchar(20) [not null, unique]
+  date_of_birth date [not null]
+  driver_license_issue_date date [not null]
+  driver_license_expiry_date date [not null]
+  created_at timestamp [not null, default: `CURRENT_TIMESTAMP`]
+}
+
+Table bonus_accounts {
+  id integer [pk, increment]
+  user_id integer [not null, unique]
+  balance decimal(10,2) [not null, default: 0]
+  updated_at timestamp [not null, default: `CURRENT_TIMESTAMP`]
+}
+
+Table cars {
+  id integer [pk, increment]
+  brand varchar(50) [not null]
+  license_plate varchar(20) [not null, unique]
+  category varchar(20) [not null]
+  fuel_level_percent integer [not null]
+  status varchar(20) [not null, default: 'available']
+  latitude decimal(10,8) [not null]
+  longitude decimal(11,8) [not null]
+}
+
+Table rentals {
+  id integer [pk, increment]
+  user_id integer [not null]
+  car_id integer [not null]
+  start_time timestamp [not null]
+  end_time timestamp
+  tariff_type varchar(20) [not null]
+  total_cost decimal(10,2)
+  status varchar(20) [not null]
+}
+
+Table payments {
+  id integer [pk, increment]
+  rental_id integer [not null]
+  payment_type varchar(20) [not null]
+  amount decimal(10,2) [not null]
+  payment_status varchar(20) [not null]
+  processed_at timestamp [not null, default: `CURRENT_TIMESTAMP`]
+}
+
+Table incidents {
+  id integer [pk, increment]
+  rental_id integer [not null]
+  incident_type varchar(30) [not null]
+  description varchar(255)
+  fine_amount decimal(10,2) [not null]
+  is_paid boolean [not null, default: false]
+  created_at timestamp [not null, default: `CURRENT_TIMESTAMP`]
+}
+
+Ref: bonus_accounts.user_id - users.id
+Ref: rentals.user_id > users.id
+Ref: rentals.car_id > cars.id
+Ref: payments.rental_id > rentals.id
+Ref: incidents.rental_id > rentals.id
