@@ -3,6 +3,7 @@
 
 BEGIN TRANSACTION;
 
+DROP TABLE IF EXISTS rentals CASCADE;
 DROP TABLE IF EXISTS bonus_accounts CASCADE;
 DROP TABLE IF EXISTS cars CASCADE;
 DROP TABLE IF EXISTS users CASCADE;
@@ -49,6 +50,31 @@ CREATE TABLE cars (
     CONSTRAINT chk_cars_longitude CHECK (longitude BETWEEN -180 AND 180)
 );
 
+CREATE TABLE rentals (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER NOT NULL,
+    car_id INTEGER NOT NULL,
+    start_time TIMESTAMP NOT NULL,
+    end_time TIMESTAMP,
+    tariff_type VARCHAR(20) NOT NULL,
+    total_cost DECIMAL(10, 2),
+    status VARCHAR(20) NOT NULL,
+    CONSTRAINT fk_rentals_user FOREIGN KEY (user_id) REFERENCES users(id),
+    CONSTRAINT fk_rentals_car FOREIGN KEY (car_id) REFERENCES cars(id),
+    CONSTRAINT chk_rentals_tariff CHECK (tariff_type IN ('per_minute', 'hourly', 'daily')),
+    CONSTRAINT chk_rentals_status CHECK (status IN ('active', 'completed', 'cancelled')),
+    CONSTRAINT chk_rentals_times CHECK (end_time IS NULL OR end_time > start_time),
+    CONSTRAINT chk_rentals_cost CHECK (total_cost >= 0),
+    CONSTRAINT chk_rentals_state CHECK (
+        (status = 'active' AND end_time IS NULL AND total_cost IS NULL)
+        OR (status = 'completed' AND end_time IS NOT NULL AND total_cost IS NOT NULL)
+        OR (status = 'cancelled' AND end_time IS NULL AND total_cost IS NOT NULL AND total_cost = 0)
+    )
+);
+
 CREATE INDEX idx_cars_status ON cars(status);
+CREATE INDEX idx_rentals_user_id ON rentals(user_id);
+CREATE INDEX idx_rentals_car_id ON rentals(car_id);
+CREATE INDEX idx_rentals_status ON rentals(status);
 
 COMMIT;
