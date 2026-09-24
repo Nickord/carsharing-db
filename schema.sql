@@ -3,6 +3,8 @@
 
 BEGIN TRANSACTION;
 
+DROP TABLE IF EXISTS incidents CASCADE;
+DROP TABLE IF EXISTS payments CASCADE;
 DROP TABLE IF EXISTS rentals CASCADE;
 DROP TABLE IF EXISTS bonus_accounts CASCADE;
 DROP TABLE IF EXISTS cars CASCADE;
@@ -72,9 +74,38 @@ CREATE TABLE rentals (
     )
 );
 
+CREATE TABLE payments (
+    id SERIAL PRIMARY KEY,
+    rental_id INTEGER NOT NULL,
+    payment_type VARCHAR(20) NOT NULL,
+    amount DECIMAL(10, 2) NOT NULL,
+    payment_status VARCHAR(20) NOT NULL,
+    processed_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_payments_rental FOREIGN KEY (rental_id) REFERENCES rentals(id),
+    CONSTRAINT chk_payments_type CHECK (payment_type IN ('charge', 'refund')),
+    CONSTRAINT chk_payments_status CHECK (payment_status IN ('pending', 'completed', 'failed')),
+    CONSTRAINT chk_payments_amount CHECK (amount > 0)
+);
+
+CREATE TABLE incidents (
+    id SERIAL PRIMARY KEY,
+    rental_id INTEGER NOT NULL,
+    incident_type VARCHAR(30) NOT NULL,
+    description VARCHAR(255),
+    fine_amount DECIMAL(10, 2) NOT NULL,
+    is_paid BOOLEAN NOT NULL DEFAULT FALSE,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_incidents_rental FOREIGN KEY (rental_id) REFERENCES rentals(id),
+    CONSTRAINT chk_incidents_type CHECK (incident_type IN
+        ('traffic_fine', 'parking_violation', 'damage', 'cleaning', 'smoking', 'late_return', 'accident')),
+    CONSTRAINT chk_incidents_amount CHECK (fine_amount > 0)
+);
+
 CREATE INDEX idx_cars_status ON cars(status);
 CREATE INDEX idx_rentals_user_id ON rentals(user_id);
 CREATE INDEX idx_rentals_car_id ON rentals(car_id);
 CREATE INDEX idx_rentals_status ON rentals(status);
+CREATE INDEX idx_payments_rental_id ON payments(rental_id);
+CREATE INDEX idx_incidents_rental_id ON incidents(rental_id);
 
 COMMIT;
